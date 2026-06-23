@@ -17,6 +17,6 @@ jobs:
           HOST: ${{ secrets.LIGHTSAIL_HOST }}
           USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          echo "$SSH_KEY" > /tmp/key.pem
+          printf '%s\n' "$SSH_KEY" > /tmp/key.pem
           chmod 600 /tmp/key.pem
           ssh -o StrictHostKeyChecking=accept-new -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com -i /tmp/key.pem ${USER}@${HOST} "cd ~/personal-portfolio && git pull origin main && docker compose up -d --build"
