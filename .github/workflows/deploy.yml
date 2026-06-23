@@ -11,17 +11,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Deploy via SSH to Lightsail
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          ssh-private-key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-
-      - name: Deploy via SSH
-        run: |
-          ssh -o StrictHostKeyChecking=accept-new \
-              -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com \
-              ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} '
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          port: 22
+          script_stop: false
+          debug: true
+          script: |
+            echo "SSH_CONNECTED"
             cd ~/personal-portfolio
             git pull origin main
             docker compose up -d --build
-          '
