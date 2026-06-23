@@ -1,0 +1,14 @@
+services:
+  website:
+    build: ./website
+    container_name: personal-website
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  todo-app:
+    build: ./todo-app
+    container_name: todo-app
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
