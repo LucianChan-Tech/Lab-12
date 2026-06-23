@@ -48,3 +48,5 @@
 
 This project is deployed on **AWS Lightsail** using Docker Compose.
 Both applications are built and deployed on the same server via GitHub Actions CI/CD.
+
+_Last verified: 23 June 2026_
