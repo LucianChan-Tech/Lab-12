@@ -11,15 +11,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH - test connection
+      - name: Deploy via SSH
         env:
           SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          HOST: ${{ secrets.LIGHTSAIL_HOST }}
-          USER: ${{ secrets.LIGHTSAIL_USER }}
+          SSH_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          SSH_USER: ${{ secrets.LIGHTSAIL_USER }}
         run: |
-          echo "=== Write SSH key ==="
+          echo "=== Debug: User=[$SSH_USER] Host=[$SSH_HOST] ==="
           echo "$SSH_KEY" > /tmp/key.pem
           chmod 600 /tmp/key.pem
-          echo "=== Test SSH connection (expected: SSH_CONNECTED) ==="
-          ssh -v -o StrictHostKeyChecking=accept-new -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com -i /tmp/key.pem ${USER}@${HOST} "echo SSH_CONNECTED" 2>&1
-          echo "=== SSH test done ==="
+          ssh -v -o StrictHostKeyChecking=accept-new -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com -i /tmp/key.pem ${SSH_USER}@${SSH_HOST} "echo SSH_CONNECTED" 2>&1
+          echo "=== Deploying ==="
+          ssh -o StrictHostKeyChecking=accept-new -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com -i /tmp/key.pem ${SSH_USER}@${SSH_HOST} "cd ~/personal-portfolio && git pull origin main && docker compose up -d --build" 2>&1
