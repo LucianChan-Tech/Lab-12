@@ -3,187 +3,205 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TodoMVC - React</title>
+  <title>TodoMVC - Vanilla JS</title>
   <link rel="stylesheet" href="https://unpkg.com/todomvc-app-css@2.4.3/index.css">
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useCallback } = React;
+  <section class="todoapp">
+    <header class="header">
+      <h1>todos</h1>
+      <input class="new-todo" id="new-todo" placeholder="What needs to be done?" autofocus>
+    </header>
 
-    function TodoApp() {
-      const [todos, setTodos] = useState(() => {
-        try {
-          const saved = localStorage.getItem('todos-react');
-          return saved ? JSON.parse(saved) : [];
-        } catch { return []; }
-      });
-      const [filter, setFilter] = useState('all');
-      const [newTodo, setNewTodo] = useState('');
-      const [editingId, setEditingId] = useState(null);
-      const [editText, setEditText] = useState('');
-      const editInputRef = useRef(null);
+    <section class="main" id="main-section" style="display:none">
+      <input id="toggle-all" class="toggle-all" type="checkbox">
+      <label for="toggle-all">Mark all as complete</label>
+      <ul class="todo-list" id="todo-list"></ul>
+    </section>
 
-      useEffect(() => {
-        localStorage.setItem('todos-react', JSON.stringify(todos));
-      }, [todos]);
+    <footer class="footer" id="footer" style="display:none">
+      <span class="todo-count" id="todo-count"></span>
+      <ul class="filters">
+        <li><a href="#/" class="selected" data-filter="all">All</a></li>
+        <li><a href="#/active" data-filter="active">Active</a></li>
+        <li><a href="#/completed" data-filter="completed">Completed</a></li>
+      </ul>
+      <button class="clear-completed" id="clear-completed" style="display:none">Clear completed</button>
+    </footer>
+  </section>
 
-      useEffect(() => {
-        if (editingId && editInputRef.current) {
-          editInputRef.current.focus();
-          editInputRef.current.setSelectionRange(editText.length, editText.length);
+  <footer class="info">
+    <p>Double-click to edit a todo</p>
+    <p>Created by Lucian Chen</p>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ----- Model -----
+      let todos = JSON.parse(localStorage.getItem('todos-vanilla')) || [];
+      let filter = 'all';
+
+      function save() {
+        localStorage.setItem('todos-vanilla', JSON.stringify(todos));
+      }
+
+      // ----- View -----
+      const $ = id => document.getElementById(id);
+      const todoList = $('todo-list');
+      const newTodo = $('new-todo');
+      const mainSection = $('main-section');
+      const footer = $('footer');
+      const toggleAll = $('toggle-all');
+      const todoCount = $('todo-count');
+      const clearCompleted = $('clear-completed');
+
+      function createTodoItem(todo) {
+        const li = document.createElement('li');
+        if (todo.completed) li.classList.add('completed');
+
+        const viewDiv = document.createElement('div');
+        viewDiv.className = 'view';
+
+        const toggle = document.createElement('input');
+        toggle.className = 'toggle';
+        toggle.type = 'checkbox';
+        toggle.checked = todo.completed;
+        toggle.addEventListener('change', () => toggleTodo(todo.id));
+
+        const label = document.createElement('label');
+        label.textContent = todo.title;
+        label.addEventListener('dblclick', () => startEdit(li, todo, label, input));
+
+        const destroyBtn = document.createElement('button');
+        destroyBtn.className = 'destroy';
+        destroyBtn.addEventListener('click', () => destroyTodo(todo.id));
+
+        viewDiv.appendChild(toggle);
+        viewDiv.appendChild(label);
+        viewDiv.appendChild(destroyBtn);
+
+        const input = document.createElement('input');
+        input.className = 'edit';
+        input.value = todo.title;
+
+        li.appendChild(viewDiv);
+        li.appendChild(input);
+
+        return li;
+      }
+
+      function render() {
+        const filtered = todos.filter(t => {
+          if (filter === 'active') return !t.completed;
+          if (filter === 'completed') return t.completed;
+          return true;
+        });
+
+        todoList.innerHTML = '';
+        filtered.forEach(todo => {
+          todoList.appendChild(createTodoItem(todo));
+        });
+
+        const activeCount = todos.filter(t => !t.completed).length;
+        const completedCount = todos.length - activeCount;
+
+        mainSection.style.display = todos.length > 0 ? '' : 'none';
+        footer.style.display = todos.length > 0 ? '' : 'none';
+        toggleAll.checked = todos.length > 0 && activeCount === 0;
+        todoCount.innerHTML = `<strong>${activeCount}</strong> ${activeCount === 1 ? 'item' : 'items'} left`;
+        clearCompleted.style.display = completedCount > 0 ? '' : 'none';
+
+        document.querySelectorAll('.filters a').forEach(a => {
+          a.classList.toggle('selected', a.dataset.filter === filter);
+        });
+
+        save();
+      }
+
+      // ----- Controller -----
+      function addTodo(title) {
+        const trimmed = title.trim();
+        if (!trimmed) return;
+        todos.push({ id: Date.now(), title: trimmed, completed: false });
+        newTodo.value = '';
+        render();
+      }
+
+      function toggleTodo(id) {
+        todos = todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+        render();
+      }
+
+      function destroyTodo(id) {
+        todos = todos.filter(t => t.id !== id);
+        render();
+      }
+
+      function startEdit(li, todo, label, input) {
+        li.classList.add('editing');
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+
+        function saveEdit() {
+          const trimmed = input.value.trim();
+          if (!trimmed) {
+            destroyTodo(todo.id);
+          } else {
+            todos = todos.map(t => t.id === todo.id ? { ...t, title: trimmed } : t);
+            li.classList.remove('editing');
+            render();
+          }
         }
-      }, [editingId]);
 
-      const addTodo = (e) => {
-        if (e.key !== 'Enter' || !newTodo.trim()) return;
-        setTodos(prev => [...prev, {
-          id: Date.now(),
-          title: newTodo.trim(),
-          completed: false
-        }]);
-        setNewTodo('');
-      };
+        function onKeydown(e) {
+          if (e.key === 'Enter') {
+            input.removeEventListener('blur', saveEdit);
+            saveEdit();
+          } else if (e.key === 'Escape') {
+            input.value = todo.title;
+            li.classList.remove('editing');
+            input.removeEventListener('blur', saveEdit);
+          }
+        }
 
-      const toggleTodo = (id) => {
-        setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-      };
+        input.addEventListener('keydown', onKeydown, { once: true });
+        input.addEventListener('blur', saveEdit, { once: true });
+      }
 
-      const destroyTodo = (id) => {
-        setTodos(prev => prev.filter(t => t.id !== id));
-      };
+      function toggleAllTodos(checked) {
+        todos = todos.map(t => ({ ...t, completed: checked }));
+        render();
+      }
 
-      const startEdit = (todo) => {
-        setEditingId(todo.id);
-        setEditText(todo.title);
-      };
+      function clearCompletedTodos() {
+        todos = todos.filter(t => !t.completed);
+        render();
+      }
 
-      const saveEdit = (id) => {
-        const trimmed = editText.trim();
-        if (!trimmed) { destroyTodo(id); return; }
-        setTodos(prev => prev.map(t => t.id === id ? { ...t, title: trimmed } : t));
-        setEditingId(null);
-        setEditText('');
-      };
-
-      const cancelEdit = () => {
-        setEditingId(null);
-        setEditText('');
-      };
-
-      const toggleAll = (e) => {
-        const checked = e.target.checked;
-        setTodos(prev => prev.map(t => ({ ...t, completed: checked })));
-      };
-
-      const clearCompleted = () => {
-        setTodos(prev => prev.filter(t => !t.completed));
-      };
-
-      const filteredTodos = todos.filter(t => {
-        if (filter === 'active') return !t.completed;
-        if (filter === 'completed') return t.completed;
-        return true;
+      // ----- Event Bindings -----
+      newTodo.addEventListener('keydown', e => {
+        if (e.key === 'Enter') addTodo(newTodo.value);
       });
 
-      const activeCount = todos.filter(t => !t.completed).length;
-      const completedCount = todos.length - activeCount;
-      const allCompleted = todos.length > 0 && activeCount === 0;
+      toggleAll.addEventListener('change', e => {
+        toggleAllTodos(e.target.checked);
+      });
 
-      return (
-        <section className="todoapp">
-          <header className="header">
-            <h1>todos</h1>
-            <input
-              className="new-todo"
-              placeholder="What needs to be done?"
-              value={newTodo}
-              onChange={e => setNewTodo(e.target.value)}
-              onKeyDown={addTodo}
-              autoFocus
-            />
-          </header>
+      clearCompleted.addEventListener('click', clearCompletedTodos);
 
-          {todos.length > 0 && (
-            <>
-              <section className="main">
-                <input
-                  id="toggle-all"
-                  className="toggle-all"
-                  type="checkbox"
-                  checked={allCompleted}
-                  onChange={toggleAll}
-                />
-                <label htmlFor="toggle-all">Mark all as complete</label>
-                <ul className="todo-list">
-                  {filteredTodos.map(todo => (
-                    <li
-                      key={todo.id}
-                      className={[
-                        todo.completed ? 'completed' : '',
-                        editingId === todo.id ? 'editing' : ''
-                      ].join(' ').trim()}
-                    >
-                      <div className="view">
-                        <input
-                          className="toggle"
-                          type="checkbox"
-                          checked={todo.completed}
-                          onChange={() => toggleTodo(todo.id)}
-                        />
-                        <label onDoubleClick={() => startEdit(todo)}>{todo.title}</label>
-                        <button className="destroy" onClick={() => destroyTodo(todo.id)}></button>
-                      </div>
-                      {editingId === todo.id && (
-                        <input
-                          ref={editInputRef}
-                          className="edit"
-                          value={editText}
-                          onChange={e => setEditText(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') saveEdit(todo.id);
-                            if (e.key === 'Escape') cancelEdit();
-                          }}
-                          onBlur={() => saveEdit(todo.id)}
-                        />
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+      window.addEventListener('hashchange', () => {
+        const hash = location.hash.replace('#/', '') || 'all';
+        if (['all', 'active', 'completed'].includes(hash)) {
+          filter = hash;
+          render();
+        }
+      });
 
-              <footer className="footer">
-                <span className="todo-count">
-                  <strong>{activeCount}</strong> {activeCount === 1 ? 'item' : 'items'} left
-                </span>
-                <ul className="filters">
-                  {['all', 'active', 'completed'].map(f => (
-                    <li key={f}>
-                      <a
-                        href="#/"
-                        className={filter === f ? 'selected' : ''}
-                        onClick={() => setFilter(f)}
-                      >{f.charAt(0).toUpperCase() + f.slice(1)}</a>
-                    </li>
-                  ))}
-                </ul>
-                {completedCount > 0 && (
-                  <button className="clear-completed" onClick={clearCompleted}>
-                    Clear completed
-                  </button>
-                )}
-              </footer>
-            </>
-          )}
-        </section>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<TodoApp />);
+      // ----- Init -----
+      render();
+    })();
   </script>
 </body>
 </html>
