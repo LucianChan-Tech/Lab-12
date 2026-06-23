@@ -16,14 +16,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
 
-      - name: Add Lightsail host to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy via SSH
         run: |
-          ssh ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} '
+          ssh -o StrictHostKeyChecking=accept-new \
+              -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com \
+              ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} '
             cd ~/personal-portfolio
             git pull origin main
             docker compose up -d --build
