@@ -39,7 +39,7 @@
 │   ├── Myself.jpg
 │   ├── CAMT.jpeg
 │   └── NMU.png
-├── todo-app/                # แอปพลิเคชัน TodoMVC React
+├── todo-app/                # แอปพลิเคชัน Todo Vanilla JS
 │   ├── Dockerfile
 │   └── index.html
 ├── docker-compose.yml       # การจัดการหลายคอนเทนเนอร์

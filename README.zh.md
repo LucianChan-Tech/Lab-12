@@ -39,7 +39,7 @@
 │   ├── Myself.jpg
 │   ├── CAMT.jpeg
 │   └── NMU.png
-├── todo-app/                # TodoMVC React 应用
+├── todo-app/                # Vanilla JS Todo 应用
 │   ├── Dockerfile
 │   └── index.html
 ├── docker-compose.yml       # 多容器编排

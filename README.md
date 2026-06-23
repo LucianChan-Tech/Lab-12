@@ -39,7 +39,7 @@
 │   ├── Myself.jpg
 │   ├── CAMT.jpeg
 │   └── NMU.png
-├── todo-app/                # TodoMVC React application
+├── todo-app/                # Vanilla JS Todo application
 │   ├── Dockerfile
 │   └── index.html
 ├── docker-compose.yml       # Multi-container orchestration
