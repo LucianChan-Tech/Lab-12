@@ -16,7 +16,13 @@ jobs:
           SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           HOST: ${{ secrets.LIGHTSAIL_HOST }}
           USER: ${{ secrets.LIGHTSAIL_USER }}
+        shell: bash
         run: |
-          printf '%s\n' "$SSH_KEY" > /tmp/key.pem
+          set +e
+          echo "=== Writing SSH key ==="
+          echo "$SSH_KEY" > /tmp/key.pem
           chmod 600 /tmp/key.pem
-          ssh -o StrictHostKeyChecking=accept-new -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com -i /tmp/key.pem ${USER}@${HOST} "cd ~/personal-portfolio && git pull origin main && docker compose up -d --build"
+          echo "=== Testing SSH connection ==="
+          ssh -o StrictHostKeyChecking=accept-new -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com -i /tmp/key.pem ${USER}@${HOST} "echo SSH_OK" 2>&1
+          echo "=== Deploying ==="
+          ssh -o StrictHostKeyChecking=accept-new -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com -i /tmp/key.pem ${USER}@${HOST} "cd ~/personal-portfolio && git pull origin main && docker compose up -d --build" 2>&1
