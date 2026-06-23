@@ -11,17 +11,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH to Lightsail
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
-          username: ${{ secrets.LIGHTSAIL_USER }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          port: 22
-          script_stop: false
-          debug: true
-          script: |
-            echo "SSH_CONNECTED"
-            cd ~/personal-portfolio
-            git pull origin main
-            docker compose up -d --build
+      - name: Write SSH key and connect
+        env:
+          SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          USER: ${{ secrets.LIGHTSAIL_USER }}
+        run: |
+          echo "Host: [$HOST]"
+          echo "User: [$USER]"
+          echo "Key length: ${#SSH_KEY}"
+          echo "$SSH_KEY" > /tmp/key.pem
+          chmod 600 /tmp/key.pem
+          ssh -o StrictHostKeyChecking=accept-new \
+              -o KexAlgorithms=+sntrup761x25519-sha512@openssh.com \
+              -i /tmp/key.pem \
+              -v \
+              ${USER}@${HOST} \
+              "echo SSH_SUCCESS" 2>&1 | tail -20
